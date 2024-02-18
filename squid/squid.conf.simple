@@ -1,0 +1,92 @@
+# from https://gist.github.com/boliu83/a2bd0fcc29035324089da864db4d5ec9
+# missing the acl_extern
+visible_hostname vm-gateway
+#
+# Recommended minimum configuration:
+#
+
+# Example rule allowing access from your local networks.
+# Adapt to list your (internal) IP networks from where browsing
+# should be allowed
+acl localnet src 10.10.10.0/24
+acl localnet src 127.0.0.1
+
+acl SSL_ports port 443
+acl Safe_ports port 80		# http
+acl Safe_ports port 21		# ftp
+acl Safe_ports port 443		# https
+acl Safe_ports port 70		# gopher
+acl Safe_ports port 210		# wais
+acl Safe_ports port 1025-65535	# unregistered ports
+acl Safe_ports port 280		# http-mgmt
+acl Safe_ports port 488		# gss-http
+acl Safe_ports port 591		# filemaker
+acl Safe_ports port 777		# multiling http
+acl CONNECT method CONNECT
+
+#
+# Recommended minimum Access Permission configuration:
+#
+# Deny requests to certain unsafe ports
+#http_access deny !Safe_ports
+
+# Deny CONNECT to other than secure SSL ports
+#http_access deny CONNECT !SSL_ports
+
+# Only allow cachemgr access from localhost
+http_access allow localhost manager
+http_access deny manager
+
+# We strongly recommend the following be uncommented to protect innocent
+# web applications running on the proxy server who think the only
+# one who can access services on "localhost" is a local user
+#http_access deny to_localhost
+
+#
+# INSERT YOUR OWN RULE(S) HERE TO ALLOW ACCESS FROM YOUR CLIENTS
+#
+
+# Example rule allowing access from your local networks.
+# Adapt localnet in the ACL section to list your (internal) IP networks
+# from where browsing should be allowed
+http_access allow localnet
+http_access allow localhost
+
+# And finally deny all other access to this proxy
+http_access deny all
+
+ssl_bump server-first all
+# Squid normally listens to port 3128
+#http_port 0.0.0.0:3127 # If we add this port without intercept SSL CONNECT will not contain the hostname, it will provide an IP address instead, and it will not generate SSL certificates for the domain.
+http_port 0.0.0.0:3128 intercept
+https_port 0.0.0.0:3129 intercept ssl-bump cert=/etc/squid/ssl_cert/myca.pem generate-host-certificates=on # dynamic_cert_mem_cache_size=8MB
+
+# Uncomment and adjust the following to add a disk cache directory.
+cache_dir ufs /var/spool/squid 100 16 256
+
+# Leave coredumps in the first cache dir
+coredump_dir /var/log/squid/cache/squid
+
+#
+# Add any of your own refresh_pattern entries above these.
+#
+refresh_pattern ^ftp:		1440	20%	10080
+refresh_pattern ^gopher:	1440	0%	1440
+refresh_pattern -i (/cgi-bin/|\?) 0	0%	0
+refresh_pattern .		0	20%	4320
+
+
+# the following two options are unsafe and not always necessary:
+
+# always_direct allow all	# specify requests which should ALWAYS be forwarded by Squid to the origin servers without using any peers.
+sslproxy_cert_error allow all	# It would also allow SSL connections which might be unsecure.
+sslproxy_options ALL		# Enable various bug workarounds suggested as harmless by OpenSSL.
+sslproxy_flags DONT_VERIFY_PEER # Accept certificates that fail verification.
+#ssl_bump bump all
+             
+# These options are not necessary
+#sslcrtd_program /usr/lib64/squid/ssl_crtd -s /var/lib/ssl_db -M 4MB 
+#sslcrtd_children 8 startup=1 idle=1
+    
+# This is a hack in the init script which helps restart the server much faster
+shutdown_lifetime 1 second

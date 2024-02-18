@@ -1,0 +1,66 @@
+http_port 3128 ssl-bump generate-host-certificates=on dynamic_cert_mem_cache_size=12MB cert=/etc/squid/ca_cert.pem key=/etc/squid/ca_key.pem
+
+sslcrtd_program /usr/lib/squid/security_file_certgen -s /var/lib/squid/ssl_d -M 12MB
+#sslcrtd_children 10 startup=5 idle=2
+
+
+acl CONNECT method CONNECT
+
+acl allowed_domains ssl::server_name sts.us-east-1.amazonaws.com
+acl allowed_domains ssl::server_name sts.us-east-2.amazonaws.com
+acl allowed_domains ssl::server_name sts.us-west-1.amazonaws.com
+acl allowed_domains ssl::server_name sts.us-west-2.amazonaws.com
+acl allowed_domains ssl::server_name sts.ca-central-1.amazonaws.com
+acl allowed_domains ssl::server_name sts.eu-west-1.amazonaws.com
+acl allowed_domains ssl::server_name sts.eu-west-2.amazonaws.com
+acl allowed_domains ssl::server_name sts.eu-west-3.amazonaws.com
+acl allowed_domains ssl::server_name sts.eu-central-1.amazonaws.com
+acl allowed_domains ssl::server_name sts.eu-central-2.amazonaws.com
+acl allowed_domains ssl::server_name sts.eu-south-1.amazonaws.com
+acl allowed_domains ssl::server_name sts.eu-south-2.amazonaws.com
+acl allowed_domains ssl::server_name sts.eu-north-1.amazonaws.com
+acl allowed_domains ssl::server_name sts.ap-east-1.amazonaws.com
+acl allowed_domains ssl::server_name sts.ap-south-1.amazonaws.com
+acl allowed_domains ssl::server_name sts.ap-south-2.amazonaws.com
+acl allowed_domains ssl::server_name sts.ap-southeast-1.amazonaws.com
+acl allowed_domains ssl::server_name sts.ap-southeast-2.amazonaws.com
+acl allowed_domains ssl::server_name sts.ap-northeast-1.amazonaws.com
+acl allowed_domains ssl::server_name sts.ap-northeast-2.amazonaws.com
+acl allowed_domains ssl::server_name sts.ap-northeast-3.amazonaws.com
+acl allowed_domains ssl::server_name sts.sa-east-1.amazonaws.com
+acl allowed_domains ssl::server_name sts.me-central-1.amazonaws.com
+acl allowed_domains ssl::server_name sts.me-south-1.amazonaws.com
+acl allowed_domains ssl::server_name sts.af-south-1.amazonaws.com
+acl allowed_domains ssl::server_name sts.cn-north-1.amazonaws.com.cn
+acl allowed_domains ssl::server_name sts.cn-northwest-1.amazonaws.com.cn
+acl allowed_domains ssl::server_name sts.us-gov-east-1.amazonaws.com
+acl allowed_domains ssl::server_name sts.us-gov-west-1.amazonaws.com
+acl allowed_domains ssl::server_name signin.aws.amazon.com
+
+acl step1 at_step SslBump1
+acl step2 at_step SslBump2
+
+ssl_bump peek step1 all
+ssl_bump stare step2 all 
+ssl_bump bump all
+#ssl_bump splice allowed_domains
+#sslproxy_cert_error deny all
+
+
+icap_enable on
+#icap_preview_enable on
+#icap_preview_size 2048
+#icap_206_enable off
+icap_service iservice reqmod_precache bypass=0 icap://127.0.0.1:1344
+
+# Apply the ICAP service to all requests
+adaptation_access iservice deny allowed_domains
+adaptation_access iservice deny CONNECT
+adaptation_access iservice allow all
+
+http_access allow all
+logformat combined %>a %ui %un [%tl] "%rm %ru HTTP/%rv" %Hs %<st %tr "%{Referer}>h" "%{User-Agent}>h"
+access_log daemon:/var/log/squid/access.log squid
+
+cache deny all
+
