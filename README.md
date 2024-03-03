@@ -1,4 +1,3 @@
-# Clotho helper
+# Clotho integrations
 
-This repo has notes, configuration, and starters to help with integrating Clotho in your environment.
-
+Notes and configuration for integrating Clotho to your environment.
