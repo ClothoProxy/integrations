@@ -11,7 +11,7 @@ Server:
 ```sh
 git clone https://github.com/ClothoProxy/integrations
 cd integrations/squid
-git clone https://github.com/ClothoProxy/ClothoProxy
+git clone https://github.com/ClothoProxy/Clotho
 docker build -t clothoproxy .
 docker run  -p 3128:3128 -v $(pwd)/config.yaml:/usr/sbin/config.yaml  -it clothoproxy
 ```
