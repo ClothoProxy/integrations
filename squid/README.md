@@ -3,6 +3,31 @@
 Clone the repo and adjust `config.yaml` for your environment.
 
 
+## How to
+
+Server:
+
+
+```sh
+git clone https://github.com/ClothoProxy/integrations
+cd integrations/squid
+git clone https://github.com/ClothoProxy/ClothoProxy
+docker build -t clothoproxy .
+docker run  -p 3128:3128 -v $(pwd)/config.yaml:/usr/sbin/config.yaml  -it clothoproxy
+```
+
+`config.yaml` is your allowlist.
+
+
+Client:
+
+```sh 
+export http_proxy=http://SERVER_IP:3128
+export https_proxy=http://SERVER_IP:3128
+aws s3 ls --no-verify-ssl
+```
+
+
 ## General Notes
 
 - You'll need `squid-openssl` in Debian.
